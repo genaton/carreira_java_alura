@@ -10,6 +10,6 @@ public record DadosDaSalaDTO(
     Boolean ativa)
  {
  public DadosDaSalaDTO(Sala sala) {
-        this(sala.getId(), sala.getNome(), sala.getCapacidade(), sala.isAtiva());
+        this(sala.getId(), sala.getNome(), sala.getCapacidade(), sala.getAtiva());
     }
 }

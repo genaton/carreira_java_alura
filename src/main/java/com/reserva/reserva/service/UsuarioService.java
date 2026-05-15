@@ -3,6 +3,8 @@ package com.reserva.reserva.service;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -11,7 +13,6 @@ import com.reserva.reserva.dto.SolicitacaoCadastroUsuarioDTO;
 import com.reserva.reserva.model.Usuario;
 import com.reserva.reserva.repository.UsuarioRepository;
 import com.reserva.reserva.validation.ValidacaoUsuario;
-import com.reserva.reserva.validation.ValidacaoUsuarioJaCadastrado;
 
 @Service
 public class UsuarioService {
@@ -22,27 +23,26 @@ public class UsuarioService {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
-    public List<DadosDoUsuarioDTO> listar() {
+    public Page<DadosDoUsuarioDTO> listar(Pageable paginacao) {
 
-        return usuarioRepository.findAll()
-                .stream()
-                .map(DadosDoUsuarioDTO::new)
-                .toList();
+        return usuarioRepository.findAll(paginacao)
+                .map(DadosDoUsuarioDTO::new);
     }
 
     public DadosDoUsuarioDTO buscarPorId(Long id) {
         Usuario usuario = usuarioRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Usuário não encontrado"));
         return new DadosDoUsuarioDTO(usuario);
     }
 
     @Transactional
-    public void cadastrar(SolicitacaoCadastroUsuarioDTO dto) {
-        Usuario novoUsuario = new Usuario(null, dto.nome());
-
+    public DadosDoUsuarioDTO  cadastrar(SolicitacaoCadastroUsuarioDTO dto) {
+        
         validacoes.forEach(v -> v.validar(dto));
+        Usuario novoUsuario = new Usuario(dto.nome());
+        Usuario usuarioSalvo = usuarioRepository.save(novoUsuario);
 
-        usuarioRepository.save(novoUsuario);
+        return new DadosDoUsuarioDTO(usuarioSalvo);
 
     }
 

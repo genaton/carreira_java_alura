@@ -1,0 +1,49 @@
+# Sistema de Reserva de Salas 🗓️
+
+API RESTful para gerenciamento e agendamento de salas de reunião, desenvolvida com Spring Boot, com foco em alta performance de persistência, atomicidade transacional e testes de unidade resilientes.
+
+## 🛠️ Tecnologias Utilizadas
+
+*   **Java 26** & **Spring Boot 4.0.6**
+*   **Spring Data JPA** (Camada de Persistência)
+*   **MySQL** (Banco de dados relacional em ambiente de Desenvolvimento)
+*   **H2 Database** (Banco de dados em memória para isolamento de Testes)
+*   **Flyway Migration** (Versionamento automatizado do esquema do banco de dados)
+*   **Lombok** (Eliminação de código boilerplate)
+*   **JUnit 5** & **Mockito** (Ecossistema de testes de unidade)
+*   **Springdoc OpenAPI** (Documentação automatizada da API)
+
+---
+
+## ⚙️ Configuração de Ambientes (Profiles)
+
+O sistema conta com isolamento estrito de ambientes para garantir reprodutibilidade de bugs e estabilidade:
+
+*   **Perfil de Desenvolvimento (`dev`):** Utiliza o **MySQL**. A estrutura de tabelas é gerenciada unicamente por scripts SQL ordenados via **Flyway**, enquanto o Hibernate atua em modo `validate`. As credenciais de acesso são protegidas localmente por um arquivo `.env` na raiz do projeto.
+*   **Perfil de Teste (`test`):** Utiliza o banco **H2 em memória** com a estratégia `create-drop`. O Flyway é desativado para acelerar a execução, permitindo que os testes de integração operem em milissegundos sem persistência em disco.
+
+---
+
+## 📐 Decisões Arquiteturais e Performance
+
+### 🛡️ Prevenção contra Conflitos de Períodos
+A validação de sobreposição de horários de reservas implementa uma lógica matemática precisa de colisão de intervalos em consultas derivadas do Spring Data JPA. Passando os parâmetros de forma cruzada (`Fim` no parâmetro de início e `Início` no parâmetro de término), a API bloqueia agendamentos conflitantes mesmo que a colisão ocorra por apenas 1 minuto, cobrindo cenários de intersecção parcial ou englobamento total.
+
+### ⚡ Controle de Carregamento (Lazy vs Eager) & N+1 Queries
+Todos os relacionamentos `@ManyToOne` da entidade `Reserva` (`Sala` e `Usuario`) foram mapeados explicitamente como **`FetchType.LAZY`**. Isso impede o carregamento guloso e desnecessário de tabelas associadas em consultas simples.
+Para mitigar o problema de performance **N+1 queries** nas listagens paginadas, os repositórios utilizam a instrução **`JOIN FETCH`**, instruindo o MySQL a realizar um único `INNER JOIN` estruturado, alimentando os DTOs instantaneamente na memória RAM.
+
+### 🔒 Atomicidade e Condições de Corrida
+Métodos de escrita das classes de serviço são anotados com `@Transactional`. Isso garante que a operação composta de agendamento (leitura de integridade + validação matemática de período + inserção física) seja executada como uma única unidade atômica de trabalho. Caso ocorra alguma violação de regra, um *rollback* automático é acionado, prevenindo condições de corrida (*race conditions*) em cenários de alta concorrência.
+
+---
+
+## 🧪 Estrutura de Testes (Etapa 4)
+
+Os testes de unidade do sistema utilizam o padrão **Given-When-Then** com o suporte do **Mockito** para isolar as regras de negócio das dependências de infraestrutura. 
+
+*   Para rodar todos os testes de unidade rapidamente através do terminal, utilize:
+    ```bash
+    ./mvnw test
+    ```
+*   Os testes estão integrados ao ciclo de build do Maven. Caso qualquer cenário de teste falhe, o empacotamento (`./mvnw clean package`) é interrompido automaticamente, impedindo builds corrompidos.

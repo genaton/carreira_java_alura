@@ -16,14 +16,21 @@ public class ValidacaoSalaLivre implements ValidacaoReserva {
 
     @Override
     public void validar(Reserva reserva, SolicitacaoReservaDTO dto) {
-        boolean jaPossuiReserva = reservaRepository.existsBySalaIdAndDataHoraReservaInicioLessThanAndDataHoraReservaFimGreaterThanAndStatus(
-            reserva.getSala().getId(),
-            reserva.getDataHoraReservaInicio(),
-            reserva.getDataHoraReservaFim(),
-            EstadoReserva.ATIVA
-        );
 
-        if (jaPossuiReserva){
+        if (reserva.getSala() == null) {
+            throw new ValidacaoException("Não é possível validar o horário pois nenhuma sala foi associada.");
+        }
+
+        boolean jaPossuiReserva = reservaRepository
+                .existsBySalaIdAndStatusAndDataHoraReservaInicioLessThanAndDataHoraReservaFimGreaterThan(
+                        reserva.getSala().getId(),
+                        EstadoReserva.ATIVA,
+                        reserva.getDataHoraReservaFim(),
+                        reserva.getDataHoraReservaInicio()
+
+                );
+
+        if (jaPossuiReserva) {
             throw new ValidacaoException("A sala já possui uma reserva ativa");
         }
     }
