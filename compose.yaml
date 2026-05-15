@@ -1,1 +1,42 @@
-services: {}
+services:
+  db:
+    image: mysql:8.0
+    container_name: reserva-db
+    restart: always
+    environment:
+      MYSQL_DATABASE: reservadb
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - reserva-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    container_name: reserva-api
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      DB_URL: jdbc:mysql://db:3306/reservadb
+      DB_USERNAME: root
+      DB_PASSWORD: ${DB_PASSWORD}
+    networks:
+      - reserva-network
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  mysql_data:
+
+networks:
+  reserva-network:
