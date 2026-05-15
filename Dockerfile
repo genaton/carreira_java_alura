@@ -3,7 +3,7 @@ FROM maven:3.9.6-eclipse-temurin-21-alpine AS build
 WORKDIR /app
 COPY pom.xml .
 COPY src ./src
-RUN mnvn clean package -DskipTests
+RUN mvn clean package -DskipTests
 
 # Estágio 2: Imagem final de execução (Apenas JRE mínima)
 FROM eclipse-temurin:21-jre-alpine
