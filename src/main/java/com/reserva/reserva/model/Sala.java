@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.PostPersist;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.EqualsAndHashCode;
@@ -40,8 +41,8 @@ public class Sala {
 
     // NO MYSQL autoincrementa o valor de registrado na coluna numero quando uma
     // nova sala é cadastrada
-    @PrePersist
-    public void prePersist() {
+    @PostPersist
+    public void posPersist() {
                 if (this.numero == null || this.numero == 0 ) {
             // Nota: Como o ID IDENTITY é gerado no banco, para usar o ID exato aqui
             // a alternativa de banco (Opção 2) ou uma consulta prévia é necessária.

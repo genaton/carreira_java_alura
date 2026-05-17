@@ -7,13 +7,13 @@ services:
       MYSQL_DATABASE: reservadb
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
     ports:
-      - "3307:3306"
+      - "3307:3306" # Mantido na porta 3307 para não conflitar com seu MySQL local
     volumes:
       - mysql_data:/var/lib/mysql
     networks:
       - reserva-network
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$${DB_PASSWORD}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -25,7 +25,7 @@ services:
     ports:
       - "8080:8080"
     environment:
-      SPRING_PROFILES_ACTIVE: dev
+      SPRING_PROFILES_ACTIVE: dev # ALTERADO: de 'prod' para 'dev' para carregar suas configurações do MySQL
       DB_URL: jdbc:mysql://db:3306/reservadb
       DB_USERNAME: root
       DB_PASSWORD: ${DB_PASSWORD}
