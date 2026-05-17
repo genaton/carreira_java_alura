@@ -3,6 +3,8 @@ package com.reserva.reserva.service;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,27 +23,27 @@ public class SalaService {
     @Autowired
     private SalaRepository salaRepository;
 
-    public List<DadosDaSalaDTO> listar() {
+    public Page<DadosDaSalaDTO> listar(Pageable paginacao) {
 
-        return salaRepository.findAll()
-                .stream()
-                .map(DadosDaSalaDTO::new)
-                .toList();
+        return salaRepository.findAll(paginacao)
+                .map(DadosDaSalaDTO::new);
     }
 
     public DadosDaSalaDTO buscarPorId(Long id) {
         Sala sala = salaRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Sala não encontrada"));
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Sala não encontrada"));
         return new DadosDaSalaDTO(sala);
     }
 
     @Transactional
-    public void cadastrar(SolicitacaoCadastroSalaDTO dto) {
-        Sala novaSala = new Sala(dto.nome(), dto.capacidade());
-
+    public DadosDaSalaDTO cadastrar(SolicitacaoCadastroSalaDTO dto) {
         validacoes.forEach(v -> v.validar(dto));
 
-        salaRepository.save(novaSala);
+        Sala novaSala = new Sala(dto.nome());
+        novaSala.setCapacidade(dto.capacidade());
+
+        Sala salaSalva = salaRepository.save(novaSala);
+        return new DadosDaSalaDTO(salaSalva);
 
     }
 
@@ -50,8 +52,7 @@ public class SalaService {
         validacoes.forEach(v -> v.validar(idSala));
 
         Sala sala = salaRepository.findById(idSala)
-                .orElseThrow(() -> new IllegalArgumentException("Sala não encontrada com o ID informado"));
-
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Sala não encontrada com o ID informado"));
 
         sala.setAtiva(false);
         salaRepository.save(sala);

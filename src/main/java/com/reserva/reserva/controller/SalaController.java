@@ -1,9 +1,11 @@
 package com.reserva.reserva.controller;
 
-import java.util.List;
+import java.net.URI;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -12,6 +14,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import com.reserva.reserva.dto.DadosDaSalaDTO;
 import com.reserva.reserva.dto.SolicitacaoCadastroSalaDTO;
@@ -27,27 +30,25 @@ public class SalaController {
     private SalaService salaService;
 
     @PostMapping
-    public ResponseEntity<String> cadastrar(@RequestBody @Valid SolicitacaoCadastroSalaDTO dto) {
+    public ResponseEntity<DadosDaSalaDTO> cadastrar(@RequestBody @Valid SolicitacaoCadastroSalaDTO dto, UriComponentsBuilder uriBuilder) {
 
-        salaService.cadastrar(dto);
+      DadosDaSalaDTO salaCriada =  salaService.cadastrar(dto);
+      URI uri = uriBuilder.path("/api/v1/salas/{id}").buildAndExpand(salaCriada.idSala()).toUri();
 
-        return ResponseEntity.status(HttpStatus.CREATED).body("Sala criada com sucesso");
+        return ResponseEntity.created(uri).body(salaCriada);
 
     }
 
-    @PutMapping("/{id}/desativar")
-    public ResponseEntity<String> desativar(@PathVariable Long id) {
-
+      @PutMapping("/{id}/desativar")
+    public ResponseEntity<Void> desativar(@PathVariable Long id) {
         salaService.desativar(id);
-
-        return ResponseEntity.ok("Sala desativada com sucesso");
-
+        return ResponseEntity.noContent().build(); // Retorna 24 No Content (padrão para exclusão/desativação lógica)
     }
 
     @GetMapping
-    public ResponseEntity<List<DadosDaSalaDTO>> listar() {
-        List<DadosDaSalaDTO> lista = salaService.listar();
-        return ResponseEntity.ok(lista);
+    public ResponseEntity<Page<DadosDaSalaDTO>> listar(@PageableDefault(size = 10, sort = "nome") Pageable paginacao) {
+        Page<DadosDaSalaDTO> pagina = salaService.listar(paginacao);
+        return ResponseEntity.ok(pagina);
     }
     
 

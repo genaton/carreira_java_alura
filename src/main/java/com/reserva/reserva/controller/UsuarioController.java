@@ -1,9 +1,11 @@
 package com.reserva.reserva.controller;
 
-import java.util.List;
+import java.net.URI;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -11,6 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import com.reserva.reserva.dto.DadosDoUsuarioDTO;
 import com.reserva.reserva.dto.SolicitacaoCadastroUsuarioDTO;
@@ -26,19 +29,21 @@ public class UsuarioController {
     private UsuarioService usuarioService;
 
     @PostMapping
-    public ResponseEntity<String> cadastrar(@RequestBody @Valid SolicitacaoCadastroUsuarioDTO dto) {
+    public ResponseEntity<DadosDoUsuarioDTO> cadastrar(@RequestBody @Valid SolicitacaoCadastroUsuarioDTO dto, UriComponentsBuilder uriBilder) {
 
-        usuarioService.cadastrar(dto);
+        DadosDoUsuarioDTO usuarioCriado = usuarioService.cadastrar(dto);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body("Usuário cadastrado com sucesso");
+        URI uri = uriBilder.path("/api/v1/usuarios/{id}").buildAndExpand(usuarioCriado.idUsuario()).toUri();
+
+        return ResponseEntity.created(uri).body(usuarioCriado);
 
     }
 
     
     @GetMapping
-    public ResponseEntity<List<DadosDoUsuarioDTO>> listar() {
-        List<DadosDoUsuarioDTO> lista = usuarioService.listar();
-        return ResponseEntity.ok(lista);
+    public ResponseEntity<Page<DadosDoUsuarioDTO>> listar(@PageableDefault(size = 10, sort = "nome") Pageable paginacao) {
+        Page<DadosDoUsuarioDTO> pagina = usuarioService.listar(paginacao);
+        return ResponseEntity.ok(pagina);
     }
     
 
